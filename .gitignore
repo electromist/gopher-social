@@ -1,0 +1,10 @@
+# Environment
+.envrc
+.env
+
+# Build outputs
+bin/
+tmp/
+
+# Air
+# .air.toml
