@@ -10,16 +10,20 @@ import (
 )
 
 type CreatePostPayload struct {
-	Title   string   `json:"title"`
-	Content string   `json:"content"`
-	Tags    []string `json:"tags"`
+	Title   string   `json:"title" validate:"required,max=100"`
+	Content string   `json:"content" validate:"required,max=1000"`
+	Tags    []string `json:"tags"` // tags are optional (isliye koi validate tag nahi)
 }
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostPayload
 
 	if err := readJSON(w, r, &payload); err != nil {
-		// Yahan badRequestResponse use karein
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -34,13 +38,11 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	if err := app.store.Posts.Create(ctx, post); err != nil {
-		// Yahan internalServerError use karein
 		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := writeJSON(w, http.StatusCreated, post); err != nil {
-		// Yahan internalServerError use karein
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -51,7 +53,6 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
-		// Yahan internalServerError (ya badRequest bhi kar sakte ho)
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -77,4 +78,3 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
