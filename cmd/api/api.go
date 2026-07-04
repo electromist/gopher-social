@@ -43,6 +43,13 @@ func (app *application) mount() http.Handler {
 
 		r.Route("/posts", func(r chi.Router) {
 			r.Post("/", app.createPostHandler)
+
+			// Naya route yahan add hoga:
+			// Route Grouping ka fayda: Is route ke baad hum PATCH /posts/{postID}
+			// aur DELETE /posts/{postID} bhi asani se add kar payenge!
+			r.Route("/{postID}", func(r chi.Router) {
+				r.Get("/", app.getPostHandler)
+			})
 		})
 	})
 
