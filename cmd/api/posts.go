@@ -63,17 +63,21 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, store.ErrNotFound):
-			// Yahan notFoundResponse use karein
 			app.notFoundResponse(w, r, err)
 		default:
-			// Yahan internalServerError use karein
 			app.internalServerError(w, r, err)
 		}
 		return
 	}
 
+	comments, err := app.store.Comments.GetByPostID(ctx, id)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	post.Comments = comments
+
 	if err := writeJSON(w, http.StatusOK, post); err != nil {
-		// Yahan internalServerError use karein
 		app.internalServerError(w, r, err)
 		return
 	}
