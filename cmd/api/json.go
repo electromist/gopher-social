@@ -7,10 +7,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Global Validate variable
 var Validate *validator.Validate
 
-// init() program run hote hi automatically ek baar call hota hai
+type envelope struct {
+	Data any `json:"data"`
+}
+
 func init() {
 	Validate = validator.New(validator.WithRequiredStructEnabled())
 }
@@ -37,4 +39,9 @@ func writeJSONError(w http.ResponseWriter, status int, message string) error {
 	}
 
 	return writeJSON(w, status, &envelope{Error: message})
+}
+
+func (app *application) jsonResponse(w http.ResponseWriter, status int, data any) error {
+	// Data ko envelope struct ke andar daal diya
+	return writeJSON(w, status, &envelope{Data: data})
 }

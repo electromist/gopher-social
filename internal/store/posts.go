@@ -16,6 +16,7 @@ type Post struct {
 	Tags      []string  `json:"tags"`
 	CreatedAt string    `json:"created_at"`
 	UpdatedAt string    `json:"updated_at"`
+	Version   int       `json:"version"`
 	Comments  []Comment `json:"comments"`
 }
 
@@ -26,7 +27,7 @@ type PostStore struct {
 func (s *PostStore) Create(ctx context.Context, post *Post) error {
 	query := `
 	INSERT INTO posts (content, title, user_id, tags)
-	VALUES($1, $2, $3, $4) RETURNING id, created_at, updated_at
+	VALUES($1, $2, $3, $4) RETURNING id, created_at, updated_at, version
 	`
 
 	// creating a row in postgres
@@ -41,6 +42,7 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 		&post.ID,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.Version,
 	)
 	if err != nil {
 		return err
@@ -57,7 +59,6 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 	`
 
 	var post Post
-	// Query chalao aur data ko scan karo
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&post.ID,
 		&post.UserID,
@@ -65,7 +66,8 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 		&post.Content,
 		&post.CreatedAt,
 		&post.UpdatedAt,
-		pq.Array(&post.Tags), // Arrays ko scan karne ke liye pq.Array use karte hain
+		pq.Array(&post.Tags),
+		&post.Version,
 	)
 
 	if err != nil {
@@ -104,13 +106,19 @@ func (s *PostStore) Delete(ctx context.Context, postID int64) error {
 func (s *PostStore) Update(ctx context.Context, post *Post) error {
 	query := `
 		UPDATE posts
-		SET title = $1, content = $2
-		WHERE id = $3
+		SET title = $1, content = $2, version = version + 1
+		WHERE id = $3 AND version = $4
+		RETURNING version
 	`
 
-	_, err := s.db.ExecContext(ctx, query, post.Title, post.Content, post.ID)
+	err := s.db.QueryRowContext(ctx, query, post.Title, post.Content, post.ID, post.Version).Scan(&post.Version)
 	if err != nil {
-		return err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrNotFound
+		default:
+			return err
+		}
 	}
 
 	return nil
