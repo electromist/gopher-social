@@ -48,7 +48,10 @@ func (app *application) mount() http.Handler {
 			// Route Grouping ka fayda: Is route ke baad hum PATCH /posts/{postID}
 			// aur DELETE /posts/{postID} bhi asani se add kar payenge!
 			r.Route("/{postID}", func(r chi.Router) {
+				r.Use(app.postsContextMiddleware)
 				r.Get("/", app.getPostHandler)
+				r.Delete("/", app.deletePostHandler) // Aapne jo pehle banaya tha
+				r.Patch("/", app.updatePostHandler)  // Naya Update route
 			})
 		})
 	})
