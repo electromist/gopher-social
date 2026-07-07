@@ -145,8 +145,7 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 	if err := app.store.Posts.Update(r.Context(), post); err != nil {
 		switch {
 		case errors.Is(err, store.ErrNotFound):
-			// Ye tab hoga jab version match nahi karega, hum 409 error bhejenge
-			app.conflictResponse(w, r)
+			app.conflictResponse(w, r, errors.New("post has been modified by another user"))
 		default:
 			app.internalServerError(w, r, err)
 		}
