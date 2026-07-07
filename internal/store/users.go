@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"errors"
 )
 
 type User struct {
@@ -58,12 +57,12 @@ func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password, // struct me JSON skip ("-") lagne ki wajah se ye frontend ko nahi jayega
+		&user.Password,
 		&user.CreatedAt,
 	)
 	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
+		switch err {
+		case sql.ErrNoRows:
 			return nil, ErrNotFound
 		default:
 			return nil, err

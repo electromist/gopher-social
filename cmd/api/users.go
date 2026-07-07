@@ -29,8 +29,8 @@ func (app *application) userContextMiddleware(next http.Handler) http.Handler {
 		ctx := r.Context()
 		user, err := app.store.Users.GetByID(ctx, userID)
 		if err != nil {
-			switch {
-			case errors.Is(err, store.ErrNotFound):
+			switch err {
+			case store.ErrNotFound:
 				app.notFoundResponse(w, r, err)
 			default:
 				app.internalServerError(w, r, err)
@@ -48,7 +48,6 @@ func getUserFromCtx(r *http.Request) *store.User {
 	return user
 }
 
-// Middleware lagne ke baad ye function ab 4 line ka reh gaya
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
 

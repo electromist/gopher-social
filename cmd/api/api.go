@@ -47,13 +47,13 @@ func (app *application) mount() http.Handler {
 			r.Route("/{postID}", func(r chi.Router) {
 				r.Use(app.postsContextMiddleware)
 				r.Get("/", app.getPostHandler)
-				r.Delete("/", app.deletePostHandler) // Aapne jo pehle banaya tha
-				r.Patch("/", app.updatePostHandler)  // Naya Update route
+				r.Delete("/", app.deletePostHandler) 
+				r.Patch("/", app.updatePostHandler) 
 			})
 		})
 		r.Route("/users", func(r chi.Router) {
 			r.Route("/{userID}", func(r chi.Router) {
-				r.Use(app.userContextMiddleware) // Ye zaroori hai!
+				r.Use(app.userContextMiddleware)
 				r.Get("/", app.getUserHandler)
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unfollowUserHandler)
