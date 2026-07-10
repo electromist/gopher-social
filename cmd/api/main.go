@@ -6,6 +6,7 @@ import (
 	"github.com/electromist/gopher-social.git/internal/db"
 	"github.com/electromist/gopher-social.git/internal/env"
 	"github.com/electromist/gopher-social.git/internal/store"
+	"go.uber.org/zap"
 )
 
 const version = "0.0.1"
@@ -41,6 +42,11 @@ func main() {
 		env: env.GetString("ENV", "development"),
 	}
 
+	// Logger
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
+	//Database
 	db, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxOpenConns,
@@ -48,11 +54,11 @@ func main() {
 		cfg.db.maxIdleTime,
 	)
 	if err != nil {
-		log.Panic(err)
+		logger.Fatal(err)
 	}
 
 	defer db.Close()
-	log.Printf("database connection pool established")
+	logger.Info("database connection pool established")
 
 	//passing the database instance into our storage
 	store := store.PostgresStorage(db)
@@ -60,6 +66,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		store:  store,
+		logger: logger,
 	}
 
 	mux := app.mount()

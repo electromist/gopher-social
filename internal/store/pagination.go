@@ -59,7 +59,6 @@ func (fq PaginatedFeedQuery) Parse(r *http.Request) (PaginatedFeedQuery, error) 
 	if since != "" {
 		fq.Since = parseTime(since)
 	}
-	return fq, nil
 
 	until := qs.Get("until")
 	if until != "" {
