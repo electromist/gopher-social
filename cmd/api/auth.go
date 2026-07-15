@@ -43,7 +43,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// 2. Struct fields ko validate karenge (email format, password length etc)
-	if err := Validate.Struct(payload); err != nil {
+	if err := Validate.Struct(&payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
