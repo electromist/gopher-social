@@ -43,12 +43,15 @@ func Seed(store store.Storage, db *sql.DB) {
 
 	// 100 Users
 	users := generateUsers(100)
+	tx, _ := db.BeginTx(ctx, nil)
 	for _, user := range users {
-		if err := store.Users.Create(ctx, user); err != nil {
+		if err := store.Users.Create(ctx, tx, user); err != nil {
 			log.Println("Error creating user:", err)
+			_ = tx.Rollback()
 			return
 		}
 	}
+	tx.Commit()
 
 	// 200 Posts
 	posts := generatePosts(200, users)
@@ -76,11 +79,12 @@ func generateUsers(num int) []*store.User {
 
 	for i := 0; i < num; i++ {
 		// Example: alice231@example.com (jaisa transcript me bataya tha)
-		users[i] = &store.User{
+		user := &store.User{
 			Username: usernames[rand.Intn(len(usernames))] + fmt.Sprintf("%d", i),
 			Email:    usernames[rand.Intn(len(usernames))] + fmt.Sprintf("%d@example.com", i),
-			Password: "123123", // Course ke hisaab se 1 to 3
 		}
+		user.Password.Set("123123")
+		users[i] = user
 	}
 	return users
 }

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/electromist/gopher-social.git/docs" // This is required to generate the swagger docs
+	"github.com/electromist/gopher-social.git/docs"
 	"github.com/electromist/gopher-social.git/internal/store"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
@@ -24,6 +24,11 @@ type config struct {
 	db     dbConfig
 	env    string
 	apiURL string
+	mail   mailConfig
+}
+
+type mailConfig struct {
+	exp time.Duration
 }
 
 type dbConfig struct {
@@ -70,8 +75,11 @@ func (app *application) mount() http.Handler {
 			r.Group(func(r chi.Router) {
 				r.Get("/feed", app.getUserFeedHandler)
 			})
-		})
 
+			r.Route("/authentication", func(r chi.Router) {
+				r.Post("/user", app.registerUserHandler)
+			})
+		})
 	})
 
 	return r

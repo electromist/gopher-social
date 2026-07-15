@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	"time"
+
 	"github.com/electromist/gopher-social.git/internal/db"
 	"github.com/electromist/gopher-social.git/internal/env"
 	"github.com/electromist/gopher-social.git/internal/store"
@@ -40,6 +42,9 @@ func main() {
 			maxIdleTime:  env.GetString("MAX_IDLE_TIME", "15m"),
 		},
 		env: env.GetString("ENV", "development"),
+		mail: mailConfig{
+			exp: time.Hour * 24 * 3, // 3 days
+		},
 	}
 
 	// Logger
