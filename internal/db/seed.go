@@ -82,6 +82,9 @@ func generateUsers(num int) []*store.User {
 		user := &store.User{
 			Username: usernames[rand.Intn(len(usernames))] + fmt.Sprintf("%d", i),
 			Email:    usernames[rand.Intn(len(usernames))] + fmt.Sprintf("%d@example.com", i),
+			Role: store.Role{
+				Name: "user",
+			},
 		}
 		user.Password.Set("123123")
 		users[i] = user

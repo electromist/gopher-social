@@ -37,17 +37,22 @@ type Storage struct {
 	}
 
 	Followers interface {
-		Follow(context.Context, int64, int64) error
-		Unfollow(context.Context, int64, int64) error
+		Follow(ctx context.Context, userID, followerID int64) error
+		Unfollow(ctx context.Context, followerID, userID int64) error
+	}
+
+	Roles interface {
+		GetByName(context.Context, string) (*Role, error)
 	}
 }
 
-func PostgresStorage(db *sql.DB) Storage {
+func NewStorage(db *sql.DB) Storage {
 	return Storage{
 		Posts:     &PostStore{db},
 		Users:     &UserStore{db},
 		Comments:  &CommentStore{db},
 		Followers: &FollowerStore{db},
+		Roles:     &RoleStore{db},
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	addr := env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost/social?sslmode=disable")
+	addr := env.GetString("DB_ADDR", "postgres://admin:adminpassword@127.0.0.1/social?sslmode=disable")
 
 	// Transcript: "I just do 3 and 3 connections here... I don't want to be generous for these scripts"
 	conn, err := db.New(addr, 3, 3, "15m")
@@ -19,7 +19,7 @@ func main() {
 	defer conn.Close()
 
 	// Store initialize
-	store := store.PostgresStorage(conn)
+	store := store.NewStorage(conn)
 
 	// internal/db package wala Seed function
 	db.Seed(store, conn)

@@ -19,10 +19,12 @@ var (
 type User struct {
 	ID        int64    `json:"id"`
 	Username  string   `json:"username"`
-	Password  password `json:"-"`
 	Email     string   `json:"email"`
+	Password  password `json:"-"`
 	CreatedAt string   `json:"created_at"`
 	IsActive  bool     `json:"is_active"`
+	RoleID    int64    `json:"role_id"`
+	Role      Role     `json:"role"`
 }
 
 type password struct {
@@ -50,19 +52,26 @@ type UserStore struct {
 
 func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `
-	INSERT INTO users (username, password, email)
-	VALUES($1, $2, $3) RETURNING id, created_at
+		INSERT INTO users (username, password, email, role_id) VALUES 
+    ($1, $2, $3, (SELECT id FROM roles WHERE name = $4))
+    RETURNING id, created_at
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	err := s.db.QueryRowContext(
+	role := user.Role.Name
+	if role == "" {
+		role = "user"
+	}
+
+	err := tx.QueryRowContext(
 		ctx,
 		query,
 		user.Username,
 		user.Password.hash,
 		user.Email,
+		role,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
@@ -83,20 +92,29 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 
 func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 	query := `
-		SELECT id, username, email, password, created_at
+		SELECT users.id, username, email, password, created_at, roles.*
 		FROM users
-		WHERE id = $1 AND is_active = true
+		JOIN roles ON (users.role_id = roles.id)
+		WHERE users.id = $1 AND is_active = true
 	`
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
 	user := &User{}
-	err := s.db.QueryRowContext(ctx, query, userID).Scan(
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		userID,
+	).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Level,
+		&user.Role.Description,
 	)
 	if err != nil {
 		switch err {

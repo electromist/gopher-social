@@ -21,7 +21,7 @@ type RegisterUserPayload struct {
 }
 
 type UserWithToken struct {
-	*store.User 
+	*store.User
 	Token string `json:"token"`
 }
 
@@ -57,6 +57,9 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	user := &store.User{
 		Username: payload.Username,
 		Email:    payload.Email,
+		Role: store.Role{
+			Name: "user",
+		},
 	}
 
 	// 4. Password hash karna (Ye .Set() function bcrypt internally call karega)
