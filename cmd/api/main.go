@@ -5,8 +5,10 @@ import (
 
 	"time"
 
+	"github.com/electromist/gopher-social.git/internal/auth"
 	"github.com/electromist/gopher-social.git/internal/db"
 	"github.com/electromist/gopher-social.git/internal/env"
+	"github.com/electromist/gopher-social.git/internal/mailer"
 	"github.com/electromist/gopher-social.git/internal/store"
 	"go.uber.org/zap"
 )
@@ -43,7 +45,23 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
-			exp: time.Hour * 24 * 3, // 3 days
+			exp:       time.Hour * 24 * 3, // 3 days
+			fromEmail: env.GetString("FROM_EMAIL", ""),
+			sendGrid: sendGridConfig{
+				apiKey: env.GetString("SENDGRID_API_KEY", ""),
+			},
+		},
+		frontendURL: env.GetString("FRONTEND_URL", "http://localhost:5173"),
+		auth: authConfig{
+			basic: basicConfig{
+				user: env.GetString("AUTH_BASIC_USER", "admin"),
+				pass: env.GetString("AUTH_BASIC_PASS", "admin"),
+			},
+			token: tokenConfig{
+				secret: env.GetString("AUTH_TOKEN_SECRET", "example"),
+				exp:    time.Hour * 24 * 3, // 3 days
+				iss:    "gophersocial",
+			},
 		},
 	}
 
@@ -68,10 +86,21 @@ func main() {
 	//passing the database instance into our storage
 	store := store.PostgresStorage(db)
 
+	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
+
+	// Authenticator
+	jwtAuthenticator := auth.NewJWTAuthenticator(
+		cfg.auth.token.secret,
+		cfg.auth.token.iss,
+		cfg.auth.token.iss,
+	)
+
 	app := &application{
-		config: cfg,
-		store:  store,
-		logger: logger,
+		config:        cfg,
+		store:         store,
+		logger:        logger,
+		mailer:        mailer,
+		authenticator: jwtAuthenticator,
 	}
 
 	mux := app.mount()
