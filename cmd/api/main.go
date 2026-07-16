@@ -9,6 +9,7 @@ import (
 	"github.com/electromist/gopher-social.git/internal/db"
 	"github.com/electromist/gopher-social.git/internal/env"
 	"github.com/electromist/gopher-social.git/internal/mailer"
+	"github.com/electromist/gopher-social.git/internal/ratelimiter"
 	"github.com/electromist/gopher-social.git/internal/store"
 	"github.com/electromist/gopher-social.git/internal/store/cache"
 	"github.com/go-redis/redis/v8"
@@ -70,6 +71,11 @@ func main() {
 			db:      env.GetInt("REDIS_DB", 0),
 			enabled: env.GetBool("REDIS_ENABLED", false),
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestsPerTimeFrame: env.GetInt("RATELIMITER_REQUESTS_COUNT", 20),
+			TimeFrame:            time.Second * 5,
+			Enabled:              env.GetBool("RATE_LIMITER_ENABLED", true),
+		},
 	}
 
 	// Logger
@@ -111,6 +117,12 @@ func main() {
 		cfg.auth.token.iss,
 	)
 
+	// Rate limiter
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestsPerTimeFrame,
+		cfg.rateLimiter.TimeFrame,
+	)
+
 	app := &application{
 		config:        cfg,
 		store:         store,
@@ -118,6 +130,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+		rateLimiter:   rateLimiter,
 	}
 
 	mux := app.mount()
